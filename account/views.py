@@ -4,7 +4,7 @@ from .serializer import RegisterSerializer
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from rest_framework.response import Response
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate,logout
 from .models import User
 import re
 
@@ -143,7 +143,11 @@ def user_login(request):
         return Response({"message": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-
+# for logout
+@api_view(['POST'])
+def user_logout(request):
+    logout(request)
+    return Response({"rsponse":"Logout successfully"}, status=200)
     
         
 
