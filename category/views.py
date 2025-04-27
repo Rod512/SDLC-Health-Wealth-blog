@@ -14,6 +14,7 @@ User = get_user_model()
 
 @api_view(['POST'])
 def post_category(request):
+
     name = request.data.get('name')
     description = request.data.get('description')
     user_id = request.data.get('user_id')
@@ -30,7 +31,7 @@ def post_category(request):
 
 
     # Perform validation or any other logic you need
-    if not all([name, description]):
+    if not all([name, description, user_id]):
         # Data PreProcessing & Santization
         return Response({"error": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -53,3 +54,14 @@ def post_category(request):
     }
     
     return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def get_category(request):
+    category = Categories.objects.all()
+
+    if not category.exists():
+        return Response({"message":"No category Found!"})
+    
+    serializer = CategorySerializer(category, many=True)
+    return Response(serializer.data,  status=200)
