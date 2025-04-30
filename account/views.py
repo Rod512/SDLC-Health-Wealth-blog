@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate,logout
 from .models import User
 import re
+from .authentication import create_access_token,create_refresh_token,decode_refresh_token
 
 name_regex = r'^([A-Za-z]{2,})(\s[A-Za-z]{2,})+$'
 email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.{1,}[a-zA-Z]{2,}$'
@@ -108,9 +109,53 @@ def patch_user(request,id):
     else:
         return Response(serilizer_data.data, status=status.HTTP_400_BAD_REQUEST)
     
+# PUT request for full data update
+@api_view(['PUT'])
+def put_user(request,id):
+    try:
+        users = User.objects.get(id=id)
+    except:
+        return Response({"message": "User doesn't exist"},status=status.HTTP_404_NOT_FOUND)
+    
+    data = request.data.copy()
+    
+    # password validation
+    if 'password' in data:
+        password = data['password']
+
+        if not re.fullmatch(pass_regex, password):
+            return Response({"Message":"Password should be minimum 6 charecter with upercase, lowercae,number and special charecter"}, status=400)
+        
+        data['password'] = make_password(data['password'])
+
+    #name validation
+    if 'name' in data:
+        name = data['name']
+
+        if not re.fullmatch(name_regex, name):
+            return Response({"Message": "Plsease enter your full name. Avoid any number and special charecter."} , status=400)
+        
+    #email validation
+    if 'email' in data:
+        email = data["email"]
+
+        if not re.fullmatch(email_regex, email):
+            return Response({"message": "Please enter a valid email address."}, status=400)
+    serilizer_data = RegisterSerializer(users, data=data)
+    
+    if serilizer_data.is_valid():
+        serilizer_data.save()
+        return Response({"message": "Data Change successfully","Data":serilizer_data.data}, status=200)
+    else:
+        return Response(serilizer_data.data, status=status.HTTP_400_BAD_REQUEST)
+
+
 # for delete user
 @api_view(['DELETE'])
-def delete_user(request,id):
+def delete_user(request):
+    id = request.data.get("user_id")
+    if not id:
+        return Response({'error': 'ID not provided'}, status=400)
     try:
         user = User.objects.get(id=id)
         user.delete()
@@ -130,18 +175,39 @@ def user_login(request):
     user = authenticate(request, email=email, password=password)
 
     if user is not None:
-        return Response(
+        access_token = create_access_token(user.id)
+        refresh_token = create_refresh_token(user.id)
+
+
+        response = Response(
             {
                 'message': "Login success!!",
+                'access_token' : access_token,
+                'refresh_token' : refresh_token,
                 'user':{
                     'email' : user.email,
-                    'password' : user.password,
+                    #'password' : user.password,
+                    'name': user.name
                 }
             }
         )
+        response.set_cookie(key='refresh_token', value=refresh_token, httponly=True)
+        return response
     else:
         return Response({"message": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
+#create a new toke using refresh token
+@api_view(['POST'])
+def refresh_view_check(request):
+    refresh_token = request.COOKIES.get('refresh_token')
+    id = decode_refresh_token(refresh_token)
+    user = User.objects.get(id=id)
+    access_token = create_access_token(user.id)
+
+    return Response({
+        'user' : RegisterSerializer(user).data,
+        "access_token" : access_token,
+    })
 
 # for logout
 @api_view(['POST'])

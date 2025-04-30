@@ -116,7 +116,10 @@ def put_category(request,id):
 
 
 @api_view(['DELETE'])
-def delete_category(request,id):
+def delete_category(request):
+    id = request.data.get("id")
+    if not id:
+        return Response({'error': 'ID not provided'}, status=400)
     try:
         category = Categories.objects.get(id=id)
         category.delete()
