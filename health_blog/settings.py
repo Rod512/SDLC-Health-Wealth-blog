@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['health_blog.up.railway.app']
+ALLOWED_HOSTS = ['sdlc-health-wealth-blog-production.up.railway.app']
 
 
 # Application definition
