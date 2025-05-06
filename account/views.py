@@ -212,8 +212,8 @@ def refresh_view_check(request):
 # for logout
 @api_view(['POST'])
 def user_logout(request):
-    logout(request)
-    return Response({"rsponse":"Logout successfully"}, status=200)
+    request.user.auth_token.delete()
+    return Response({"response":"Logout successfully"}, status=200)
     
         
 
