@@ -71,3 +71,58 @@ def post_blog(request):
 
         }
     }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def get_blogs(request):
+    blogs = Blog.objects.all().order_by('-created_at')
+    serializer = BlogSerializer(blogs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def get_single_blog(request, pk):
+    blog = get_object_or_404(Blog, pk=pk)
+    serializer = BlogSerializer(blog)
+    return Response(serializer.data)
+
+
+@api_view(['PATCH'])
+def partial_update_blog(request, pk):
+    try:
+        blog = Blog.objects.get(pk=pk)
+    except Blog.DoesNotExist:
+        return Response({'Response':"Blog does not exist"})
+    
+    serializer = BlogSerializer(blog, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT'])
+def update_blog(request, pk):
+    try:
+        blog = Blog.objects.get(pk=pk)
+    except Blog.DoesNotExist:
+        return Response({'Response':"Blog does not exist"})
+    
+    serializer = BlogSerializer(blog, data=request.data,)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+def delete_blog(request):
+    id = request.data.get("id")
+    if not id:
+        return Response({"Message": "Blog id not provided"})
+    try:
+        blog = Blog.objects.get(id=id)
+        blog.delete()
+        return Response({'message': 'Blog deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    except:
+        return Response({"message":"User invalid"})
