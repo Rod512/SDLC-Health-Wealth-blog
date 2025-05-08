@@ -33,6 +33,10 @@ def post_category(request):
         # Data PreProcessing & Santization
         return Response({"error": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
     
+    if Categories.objects.filter(name=name).exists():
+        return Response({"Message": "Category allready register."}, status=status.HTTP_400_BAD_REQUEST)
+
+    
     if not re.match(name_regex, name):
         return Response({"error": "Name must be between 3 and 50 characters and can only contain letters and underscores (_). No spaces, numbers, or special characters allowed."}, status=status.HTTP_400_BAD_REQUEST)
     else:
