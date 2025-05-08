@@ -123,6 +123,6 @@ def delete_blog(request):
     try:
         blog = Blog.objects.get(id=id)
         blog.delete()
-        return Response({'message': 'Blog deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Blog deleted successfully'}, status=200)
     except:
         return Response({"message":"User invalid"})
