@@ -1,5 +1,32 @@
 import jwt
 from datetime import datetime,timedelta,timezone
+from rest_framework.authentication import BaseAuthentication, get_authorization_header
+from rest_framework.exceptions import AuthenticationFailed
+from .models import User
+
+
+class JWTauthentication(BaseAuthentication):
+    def authenticate(self, request):
+        auth_header = get_authorization_header(request).split()
+
+        if len(auth_header) != 2:
+            raise AuthenticationFailed("Issue on authentication header")
+        
+        try:
+            token = auth_header[1].decode('utf-8')
+            print(f'Token received from client: {token}')
+        except UnicodeDecodeError:
+            raise AuthenticationFailed("Invalid token encoding")
+        
+        try:
+            user_id =decode_access_token(token)
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise AuthenticationFailed("user not found")
+        except Exception as e:
+            raise AuthenticationFailed(f'Token validation error: {str(e)}')
+        #return (user, {'is_admin': user.is_superuser})                 
+        return (user, None)      
 
 def create_access_token(id):
     algorithm = "HS256"

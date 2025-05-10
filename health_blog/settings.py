@@ -139,3 +139,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", 
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# REST FRAMEWORK
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny'
+    ]
+}

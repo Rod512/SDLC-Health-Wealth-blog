@@ -1,13 +1,18 @@
+from django.utils import timezone
+from datetime import timedelta
 from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,permission_classes,authentication_classes
+from django.views.decorators.csrf import csrf_exempt
+
 from .serializer import RegisterSerializer
-from rest_framework import status
+from rest_framework import status, exceptions
 from django.contrib.auth.hashers import make_password
 from rest_framework.response import Response
 from django.contrib.auth import authenticate,logout
-from .models import User
+from .models import User, UserToken
 import re
-from .authentication import create_access_token,create_refresh_token,decode_refresh_token
+from .authentication import create_access_token,create_refresh_token,decode_refresh_token,JWTauthentication
+from rest_framework.permissions import IsAuthenticated
 
 name_regex = r'^([A-Za-z]{2,})(\s[A-Za-z]{2,})+$'
 email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.{1,}[a-zA-Z]{2,}$'
@@ -168,52 +173,120 @@ def delete_user(request):
 def user_login(request):
     email = request.data.get("email")
     password = request.data.get("password")
+    user = User.objects.filter(email=email).first()
 
-    if not email or not password:
-        return Response({'message': "Email and password both are required"})
+    if user is None:
+        raise exceptions.AuthenticationFailed('Invalid credentials')
+    
+    if not user.check_password(password):
+        raise exceptions.AuthenticationFailed('Invalid credentials')
 
-    user = authenticate(request, email=email, password=password)
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
 
-    if user is not None:
-        access_token = create_access_token(user.id)
-        refresh_token = create_refresh_token(user.id)
+    UserToken.objects.create(
+        user = user,
+        tokens = refresh_token,
+        expired_at = timezone.now() + timedelta(days=7)
+    )
+
+    response = Response()
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
+    response.data = {
+        "access_token" : access_token,
+        "refresh_token" : refresh_token,
+        "name" : user.name,
+        "email" : user.email
+    }
+
+    return response
 
 
-        response = Response(
-            {
-                'message': "Login success!!",
-                'access_token' : access_token,
-                'refresh_token' : refresh_token,
-                'user':{
-                    'email' : user.email,
-                    #'password' : user.password,
-                    'name': user.name
-                }
-            }
-        )
-        response.set_cookie(key='refresh_token', value=refresh_token, httponly=True)
-        return response
-    else:
-        return Response({"message": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
+    
 
-#create a new toke using refresh token
+#Generate new access token and refresh token using old access and refrsh token
 @api_view(['POST'])
 def refresh_view_check(request):
-    refresh_token = request.COOKIES.get('refresh_token')
-    id = decode_refresh_token(refresh_token)
-    user = User.objects.get(id=id)
-    access_token = create_access_token(user.id)
+    refresh_token = request.data.get('refresh_token') or request.COOKIES.get('refresh_token')
 
-    return Response({
+    if not refresh_token:
+        return Response({"message":"Refresh token not provided"}, status=400)
+    
+    try:
+        user_id = decode_refresh_token(refresh_token)
+        user = User.objects.get(id=user_id)
+
+        token_obj =UserToken.objects.filter(
+            user = user,
+            tokens = refresh_token,
+            expired_at__gt = timezone.now()
+        ).first()
+
+        if not token_obj:
+            return Response({"Message" : "Invalid token or expired refresh token"}, status=400)
+    except User.DoesNotExist:
+        return Response({"Message" : "Invalid User!!"}, status=400)
+    except Exception as e:
+        return Response({'error': f'Invalid token: {str(e)}'}, status=401)
+    
+    token_obj.delete()
+
+    new_access_token = create_access_token(user.id)
+    new_refresh_token = create_refresh_token(user.id)
+
+    UserToken.objects.create(
+        user = user,
+        tokens = new_refresh_token,
+        expired_at = timezone.now()+timedelta(days=7)
+    )
+
+    response = Response({
         'user' : RegisterSerializer(user).data,
-        "access_token" : access_token,
+        'access_token' : new_access_token,
+        'refresh_token' : new_refresh_token
+
     })
+    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
+    return response
+
+
+
+@api_view(['get'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([JWTauthentication])
+def user_api(request):
+    user = request.user
+    serializer = RegisterSerializer(user)
+    return Response({
+        "user" : serializer.data
+    })
+
+
 
 # for logout
 @api_view(['POST'])
+@csrf_exempt
 def user_logout(request):
-    request.user.auth_token.delete()
-    return Response({"response":"Logout successfully"}, status=200)
+    refresh_token = request.data.get("refresh_token") or request.COOKIES.get("refresh_token")
+
+    if not refresh_token:
+        return Response({"Message": "Token missing"}, status=400)
+    
+    UserToken.objects.filter(tokens=refresh_token).delete()
+
+    token_obj = UserToken.objects.filter(tokens=refresh_token).first()
+    
+    if not token_obj:
+        return Response({"detail": "Invalid or already logged out"}, status=401)
+
+
+    response = Response({
+        "message" : "Logout Successfull"
+    }, status=200)
+    response.delete_cookie(key="refresh_token")
+
+    return response
+
     
         
 
