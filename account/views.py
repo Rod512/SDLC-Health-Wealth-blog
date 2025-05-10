@@ -272,13 +272,12 @@ def user_logout(request):
     if not refresh_token:
         return Response({"Message": "Token missing"}, status=400)
     
-    UserToken.objects.filter(tokens=refresh_token).delete()
-
     token_obj = UserToken.objects.filter(tokens=refresh_token).first()
     
     if not token_obj:
         return Response({"detail": "Invalid or already logged out"}, status=401)
-
+    
+    UserToken.objects.filter(tokens=refresh_token).delete()
 
     response = Response({
         "message" : "Logout Successfull"
