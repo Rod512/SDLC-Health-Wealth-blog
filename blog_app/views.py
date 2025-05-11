@@ -47,6 +47,8 @@ def post_blog(request):
         for chunk in image_file.chunks():
             destination.write(chunk)
 
+    image_url = request.build_absolute_uri(settings.MEDIA_URL + image_file.name)
+
     blog = Blog.objects.create(
         title=title,
         content=content,
@@ -55,8 +57,6 @@ def post_blog(request):
         tags=tags,
         filename=image_file.name  
     )
-
-    image_url = request.build_absolute_uri(settings.MEDIA_URL + 'blog_images/' + image_file.name)
 
     return Response({
         'message': 'Blog created successfully!',
@@ -77,18 +77,24 @@ def post_blog(request):
 def get_blogs(request):
     blogs = Blog.objects.all().order_by('-created_at')
     serializer = BlogSerializer(blogs, many=True)
-    return Response(serializer.data)
+
+    for blog in serializer.data:
+        blog['filename'] = request.build_absolute_uri('/media/' + blog['filename'])
+    
+    return Response(serializer.data, status=200)
 
 
 @api_view(['GET'])
 def get_single_blog(request, pk):
     blog = get_object_or_404(Blog, pk=pk)
     serializer = BlogSerializer(blog)
+    for blog in serializer.data:
+        blog['filename'] = request.build_absolute_uri('/media/' + blog['filename'])
     return Response(serializer.data)
 
 
 @api_view(['PATCH'])
-def partial_update_blog(request, pk):
+def patch_blog(request, pk):
     try:
         blog = Blog.objects.get(pk=pk)
     except Blog.DoesNotExist:
@@ -102,7 +108,7 @@ def partial_update_blog(request, pk):
 
 
 @api_view(['PUT'])
-def update_blog(request, pk):
+def put_blog(request, pk):
     try:
         blog = Blog.objects.get(pk=pk)
     except Blog.DoesNotExist:
