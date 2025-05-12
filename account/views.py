@@ -176,10 +176,10 @@ def user_login(request):
     user = User.objects.filter(email=email).first()
 
     if user is None:
-        raise exceptions.AuthenticationFailed('Invalid credentials')
-    
+        raise exceptions.AuthenticationFailed('Invalid Cradential')
+
     if not user.check_password(password):
-        raise exceptions.AuthenticationFailed('Invalid credentials')
+        raise exceptions.AuthenticationFailed('Invalid Cradential')
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
@@ -193,6 +193,7 @@ def user_login(request):
     response = Response()
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
     response.data = {
+        "Message" : 'Login Successfull',
         "access_token" : access_token,
         "refresh_token" : refresh_token,
         "name" : user.name,

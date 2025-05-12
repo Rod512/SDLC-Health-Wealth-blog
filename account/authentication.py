@@ -74,3 +74,5 @@ def decode_refresh_token(token):
         return {'error': 'Token expired'}
     except jwt.InvalidTokenError:
         return {'error': 'Invalid token'}
+
+
