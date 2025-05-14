@@ -88,9 +88,10 @@ def get_blogs(request):
 def get_single_blog(request, pk):
     blog = get_object_or_404(Blog, pk=pk)
     serializer = BlogSerializer(blog)
-    for blog in serializer.data:
-        blog['filename'] = request.build_absolute_uri('/media/' + blog['filename'])
-    return Response(serializer.data)
+    data = serializer.data
+    if 'filename' in data:
+        data['filename'] = request.build_absolute_uri('/media/' + data['filename'])
+    return Response(data)
 
 
 @api_view(['PATCH'])
