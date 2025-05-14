@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'account.apps.AccountConfig',
     'category.apps.CategoryConfig',
     'blog_app.apps.BlogAppConfig',
+    'subscriber.apps.SubscriberConfig',
 
     #third_party app
     'rest_framework',
