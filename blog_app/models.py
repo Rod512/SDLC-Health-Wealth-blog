@@ -5,7 +5,7 @@ from account.models import User
 class Blog(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
-    filename = models.CharField(max_length=255, blank=True, null=True)
+    image = models.ImageField(upload_to="blog_image/", blank=True, null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(Categories, on_delete=models.SET_NULL, null=True)
     tags = models.JSONField(default=list)
