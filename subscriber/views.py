@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -26,3 +26,37 @@ def subscribe(request):
         "Message" : "Subscribed Successfull !!",
         "Email" : subscriber.email
     })
+
+
+@api_view(['GET'])
+def get_subscriber(request):
+    subscribers = Subscriber.objects.all().order_by('subscribeOn')
+
+    if not subscribers.exists():
+
+        return Response({
+            "subscribers": "No subscriber found"
+        }, status=400)
+    
+    subscriber_serializer = SubscriberSerialzier(subscribers, many=True)
+        
+    return Response({
+        "subscribers": subscriber_serializer.data
+    }, status=200)
+
+       
+@api_view(['DELETE'])
+def delete_subscriber(request):
+    try:
+        id = request.data.get("id")
+        subscriber = get_object_or_404(Subscriber, id=id)
+        subscriber.delete()
+        return Response({"message":"Subscriber delete!!"})
+    except Exception as e:
+        return Response({ "error": "Something went wrong while deleting subscribers.",
+            "details": str(e)
+        })
+
+
+
+
