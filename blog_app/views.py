@@ -85,7 +85,6 @@ def get_blogs(request):
     
         
         
-
 @api_view(['GET'])
 def get_single_blog(request, pk):
     blog = get_object_or_404(Blog, pk=pk)

@@ -9,7 +9,7 @@ urlpatterns = [
     path("delete_user/", views.delete_user, name="delete"),
     path("user_login/", views.user_login, name="login"),
     path("user_api_view/", views.user_api, name="user_api"),
-    path("user_logout/", views.user_logout, name="login"),
+    path("user_logout/", views.user_logout, name="logout"),
     path("new_token/", views.refresh_view_check, name="new_token"),
 
 

@@ -33,7 +33,7 @@ def post_category(request):
         # Data PreProcessing & Santization
         return Response({"error": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
     
-    if Categories.objects.filter(name=name).exists():
+    if Categories.objects.filter(name__iexact=name).exists():
         return Response({"Message": "Category allready register."}, status=status.HTTP_400_BAD_REQUEST)
 
     

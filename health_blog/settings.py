@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'category.apps.CategoryConfig',
     'blog_app.apps.BlogAppConfig',
     'subscriber.apps.SubscriberConfig',
+    'bookmark.apps.BookmarkConfig',
 
     #third_party app
     'rest_framework',
