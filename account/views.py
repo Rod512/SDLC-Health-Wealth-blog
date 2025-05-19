@@ -24,6 +24,7 @@ def create_register_api(request):
     name = request.data.get("name")
     email = request.data.get("email")
     password = request.data.get("password")
+    user_type = request.data.get("user_type")
     
     # name validation
     if not re.fullmatch(name_regex, name):
@@ -47,7 +48,8 @@ def create_register_api(request):
         user_created = User(
             name = name,
             email = email,
-            password= make_password(password)
+            password= make_password(password),
+            user_type = user_type
         )
         user_created.save()
         
@@ -58,7 +60,9 @@ def create_register_api(request):
         "user" :{
             "name" : name,
             "email" : email,
-            "password" : password
+            "password" : password,
+            "user_type" : user_type,
+
         }
     }
 
@@ -197,7 +201,8 @@ def user_login(request):
         "access_token" : access_token,
         "refresh_token" : refresh_token,
         "name" : user.name,
-        "email" : user.email
+        "email" : user.email,
+        "user_type" : user.user_type
     }
 
     return response

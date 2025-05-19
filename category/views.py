@@ -1,11 +1,15 @@
 # Create your views here.
 from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,authentication_classes,permission_classes
 from .serializer import CategorySerializer
 from .models import Categories
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
+
+from rest_framework.permissions import IsAuthenticated
+from account.authentication import JWTauthentication
+from . permissions import IsAdminCanEdit
 import re
 
 User = get_user_model()
@@ -14,8 +18,9 @@ User = get_user_model()
 name_regex = r'^([A-Za-z_]{2,})(\s[A-Za-z_]+)*+$'
 
 @api_view(['POST'])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def post_category(request):
-
     name = request.data.get('name')
     description = request.data.get('description')
     user_id = request.data.get('user_id')
@@ -70,6 +75,8 @@ def get_category(request):
 
 
 @api_view(['PATCH'])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def patch_category(request, id):
     try:
         categories = Categories.objects.get(id=id)
@@ -93,6 +100,8 @@ def patch_category(request, id):
 
 
 @api_view(['PUT'])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def put_category(request,id):
     try:
         categories = Categories.objects.get(id=id)
@@ -120,6 +129,8 @@ def put_category(request,id):
 
 
 @api_view(['DELETE'])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def delete_category(request):
     id = request.data.get("id")
     if not id:

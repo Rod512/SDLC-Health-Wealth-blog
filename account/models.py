@@ -5,6 +5,7 @@ class User(AbstractUser):
     username = None
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
+    user_type = models.CharField(max_length=20, choices=[('admin', 'Admin'),('user', 'User')])
     #password = models.CharField(max_length=100)
 
 

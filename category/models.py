@@ -7,5 +7,10 @@ class Categories(models.Model):
     description = models.TextField()
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
 
+    class Meta:
+        permissions = [
+            ("can_edit_category", "Can create/edit/delete Categories"),
+        ]
+
     def __str__(self):
         return self.name

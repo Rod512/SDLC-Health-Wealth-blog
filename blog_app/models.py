@@ -11,8 +11,14 @@ class Blog(models.Model):
     tags = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
 
-
+    class Meta:
+         permissions = [
+            ("can_edit_blog", "Can create/edit/delete Blog"),
+            ("can_view_blog", "Can view Blog"),
+        ]
     def __str__(self):
         return self.title
+    
+
 
 

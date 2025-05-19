@@ -1,5 +1,6 @@
 import os
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, parser_classes,permission_classes,authentication_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.conf import settings
 from rest_framework import status
@@ -10,12 +11,16 @@ from .serializer import BlogSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from .permissions import CanViewBlog,IsAdminCanEdit
+from account.authentication import JWTauthentication
+
 
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def post_blog(request):
-
     title = request.data.get('title')
     content = request.data.get('content')
     category_name = request.data.get('category')
@@ -25,9 +30,6 @@ def post_blog(request):
 
     if not image:
         return Response({'error': 'No image file provided.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    
-
     try:
         category = Categories.objects.get(name__iexact=category_name)
 
@@ -40,9 +42,6 @@ def post_blog(request):
     except User.DoesNotExist:
         return Response({'message': 'User not found'}, status=404)
     
-
-   
-
     blog = Blog.objects.create(
         title=title,
         content=content,
@@ -94,6 +93,9 @@ def get_single_blog(request, pk):
 
 
 @api_view(['PATCH'])
+@parser_classes([MultiPartParser, FormParser])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def patch_blog(request, pk):
     try:
         blog = Blog.objects.get(pk=pk)
@@ -108,6 +110,9 @@ def patch_blog(request, pk):
 
 
 @api_view(['PUT'])
+@parser_classes([MultiPartParser, FormParser])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def put_blog(request, pk):
     try:
         blog = Blog.objects.get(pk=pk)
@@ -122,6 +127,8 @@ def put_blog(request, pk):
 
 
 @api_view(['DELETE'])
+@authentication_classes([JWTauthentication])
+@permission_classes([IsAuthenticated, IsAdminCanEdit])
 def delete_blog(request):
     id = request.data.get("id")
     if not id:
@@ -132,3 +139,14 @@ def delete_blog(request):
         return Response({'message': 'Blog deleted successfully'}, status=200)
     except:
         return Response({"message":"User invalid"})
+
+
+@api_view(['GET'])
+@authentication_classes([ JWTauthentication])
+@permission_classes([IsAuthenticated, CanViewBlog])
+def blogListView(request):
+    blog = Blog.objects.all()
+    serializer = BlogSerializer(blog, many=True)
+    return Response({'Blog' : serializer.data})
+
+
